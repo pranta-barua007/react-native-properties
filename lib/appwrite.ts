@@ -46,7 +46,7 @@ import {
       if (!response) throw new Error("Create OAuth2 token failed");
   
       const browserResult = await openAuthSessionAsync(
-        response.toString(),
+        response.href,
         redirectUri
       );
       if (browserResult.type !== "success")
