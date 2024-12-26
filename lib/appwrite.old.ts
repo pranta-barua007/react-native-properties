@@ -7,9 +7,8 @@ import {
     Query,
     Storage,
   } from "react-native-appwrite";
-  // import * as Linking from "expo-linking";
+  import * as Linking from "expo-linking";
   import { openAuthSessionAsync } from "expo-web-browser";
-  import { makeRedirectUri } from "expo-auth-session";
   
   export const config = {
     platform: 'com.prantab.properties',
@@ -38,29 +37,18 @@ import {
   
   export async function login() {
     try {
-      let redirectScheme = makeRedirectUri({ preferLocalhost: true, isTripleSlashed: false });
-      
-      //HACK: localhost is a hack to get the redirection possible
-      if (process.env.EXPO_PUBLIC_DEV_MODE !== 'true' && !redirectScheme.includes('localhost')) {
-        redirectScheme = `${redirectScheme}localhost/`;
-      }
-      
-      //const redirectUri = Linking.createURL('/', { scheme: redirectScheme });
+      const redirectUri = Linking.createURL("/");
   
-      const responseURL = account.createOAuth2Token(
+      const response = account.createOAuth2Token(
         OAuthProvider.Google,
-        redirectScheme
+        redirectUri
       );
-      if (!responseURL) throw new Error("Create OAuth2 token failed");
-
-      // console.log({responseURL});
+      if (!response) throw new Error("Create OAuth2 token failed");
   
       const browserResult = await openAuthSessionAsync(
-        responseURL.href,
-        redirectScheme
+        response.href,
+        redirectUri
       );
-
-      // console.log({browserResult});
       if (browserResult.type !== "success")
         throw new Error("Create OAuth2 token failed");
   
