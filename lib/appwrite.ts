@@ -7,8 +7,9 @@ import {
   Query,
   Storage,
 } from "react-native-appwrite";
-import * as Linking from "expo-linking";
+// import * as Linking from "expo-linking";
 import { openAuthSessionAsync } from "expo-web-browser";
+import { makeRedirectUri } from "expo-auth-session";
 
 export const config = {
   platform: 'com.prantab.properties',
@@ -37,18 +38,26 @@ export const storage = new Storage(client);
 
 export async function login() {
   try {
-    const redirectUri = Linking.createURL("/sign-in");
+    let redirectTo = makeRedirectUri();
+    const deepLinkRoute = '/sign-in'; // Needs to match platform custom host AND be a valid route
+    const redirectUri = redirectTo.includes('exp://')
+  ? redirectTo
+  : `${redirectTo}${deepLinkRoute}`;
 
-    const response = account.createOAuth2Token(
+    const responseURL = account.createOAuth2Token(
       OAuthProvider.Google,
       redirectUri
     );
-    if (!response) throw new Error("Create OAuth2 token failed");
+    if (!responseURL) throw new Error("Create OAuth2 token failed");
+
+    // console.log({responseURL});
 
     const browserResult = await openAuthSessionAsync(
-      response.href,
+      responseURL.href,
       redirectUri
     );
+
+    // console.log({browserResult});
     if (browserResult.type !== "success")
       throw new Error("Create OAuth2 token failed");
 
