@@ -7,7 +7,6 @@ import {
   Query,
   Storage,
 } from "react-native-appwrite";
-// import * as Linking from "expo-linking";
 import { openAuthSessionAsync } from "expo-web-browser";
 import { makeRedirectUri } from "expo-auth-session";
 
@@ -38,35 +37,40 @@ export const storage = new Storage(client);
 
 export async function login() {
   try {
-    let redirectTo = makeRedirectUri();
-    const deepLinkRoute = '/sign-in'; // Needs to match platform custom host AND be a valid route
-    const redirectUri = redirectTo.includes('exp://')
-  ? redirectTo
-  : `${redirectTo}${deepLinkRoute}`;
+    // REQUIRED
+    // Make sure a scheme is set in your app.json
 
-    const responseURL = account.createOAuth2Token(
+    // Create deep link that works across Expo environments
+    // Ensure localhost is used for the hostname to validation error for success/failure URLs
+    const deepLink = new URL(makeRedirectUri({ preferLocalhost: true }));
+    if (!deepLink.hostname) {
+      deepLink.hostname = 'localhost';
+    }
+    const scheme = `${deepLink.protocol}//`; // e.g. 'exp://' or 'playground://'
+
+    // Start OAuth flow
+    const loginUrl = account.createOAuth2Token(
       OAuthProvider.Google,
-      redirectUri
-    );
-    if (!responseURL) throw new Error("Create OAuth2 token failed");
-
-    // console.log({responseURL});
-
-    const browserResult = await openAuthSessionAsync(
-      responseURL.href,
-      redirectUri
+      `${deepLink}`,
+      `${deepLink}`,
     );
 
-    // console.log({browserResult});
-    if (browserResult.type !== "success")
-      throw new Error("Create OAuth2 token failed");
+    if (!loginUrl) throw new Error("Create OAuth2 token failed");
 
-    const url = new URL(browserResult.url);
-    
+    // Open loginUrl and listen for the scheme redirect
+    const result = await openAuthSessionAsync(`${loginUrl}`, scheme);
+
+    if (result.type !== "success") throw new Error("Create OAuth2 token failed");
+
+    console.log({ result });
+
+    // Extract credentials from OAuth redirect URL
+    const url = new URL(result.url);
     const secret = url.searchParams.get("secret")?.toString();
     const userId = url.searchParams.get("userId")?.toString();
     if (!secret || !userId) throw new Error("Create OAuth2 token failed");
 
+    // Create session with OAuth credentials
     const session = await account.createSession(userId, secret);
     if (!session) throw new Error("Failed to create session");
 
