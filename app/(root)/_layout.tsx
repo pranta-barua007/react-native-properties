@@ -20,7 +20,7 @@ const AppLayout = () => {
     )
   }
 
-  if (!isLoggedIn) return <Redirect href={'/sign-in'} />
+  if (!isLoggedIn) return <Redirect href={'/signin'} />
 
   return <Slot />
 }

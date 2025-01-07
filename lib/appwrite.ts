@@ -8,7 +8,7 @@ import {
   Storage,
 } from "react-native-appwrite";
 import { openAuthSessionAsync } from "expo-web-browser";
-import { makeRedirectUri } from "expo-auth-session";
+import * as Linking from "expo-linking";
 
 export const config = {
   platform: 'com.prantab.properties',
@@ -39,12 +39,18 @@ export async function login() {
   try {
     // REQUIRED
     // Make sure a scheme is set in your app.json
+    // Make sure to allow * in Hostname in APPWRITE CONSOLE under web application
 
     // Create deep link that works across Expo environments
-    // Ensure localhost is used for the hostname to validation error for success/failure URLs
-    const deepLink = new URL(makeRedirectUri({ preferLocalhost: true }));
+    const redirectURL = Linking.createURL("/");
+
+    const deepLink = new URL(redirectURL);
+
     if (!deepLink.hostname) {
-      deepLink.hostname = 'localhost';
+      // make sure its the page of app that do redirects 
+      // in my app its '/app/signin.tsx' which does redirects
+      // and must not include any '-' in between (e.g. sign-in ❌, signin ✅)
+      deepLink.hostname = 'signin';  
     }
     const scheme = `${deepLink.protocol}//`; // e.g. 'exp://' or 'playground://'
 
@@ -54,6 +60,8 @@ export async function login() {
       `${deepLink}`,
       `${deepLink}`,
     );
+
+    console.log({ loginUrl });
 
     if (!loginUrl) throw new Error("Create OAuth2 token failed");
 
